@@ -7,7 +7,7 @@ This repository contains the robot code used by the Julia R. Masterman High Scho
 - **Personal branches only**: Each person should do their work on their own branch.
   - Suggested naming: `yourname/feature-short-name` or `yourname/fix-short-name`.
 - **Pull requests to `main`**: When you want your code merged into the main working robot, open a PR targeting `main`.
-  - **Tag @li-valen** in your PR description or as a reviewer so it’s seen quickly.
+  - **Tag [@li-valen](https://github.com/li-valen)** in your PR description or as a reviewer so it’s seen quickly.
   - Keep PRs focused and reasonably small for faster review.
 - **Reviews & merges**:
   - At least one reviewer approval is required before merge (coach/lead may require more during competition season).
@@ -67,7 +67,7 @@ This repository contains the robot code used by the Julia R. Masterman High Scho
    git commit -m "Subsystem: brief change description"
    git push -u origin yourname/feature-short-name
    ```
-4. Open a Pull Request into `main` and **tag @li-valen** for review.
+4. Open a Pull Request into `main` and **tag [@li-valen](https://github.com/li-valen)** for review.
 
 ## Build, Simulate, and Deploy
 
@@ -118,4 +118,4 @@ This project builds on WPILib. See `WPILib-License.md` for the WPILib license.
 ## Support and Questions
 
 - Open a GitHub Issue for bugs or feature requests.
-- For PRs that need attention, remember to **tag @li-valen**.
+- For PRs that need attention, remember to **tag [@li-valen](https://github.com/li-valen)**.
