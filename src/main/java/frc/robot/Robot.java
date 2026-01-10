@@ -65,18 +65,10 @@ public class Robot extends TimedRobot {
     double rawTurnSpeed = -m_controller.getRightX();
 
     double maxAcceleration = 0.05;
-    if (rawForwardSpeed >= forwardSpeed + maxAcceleration){
-      forwardSpeed = forwardSpeed + maxAcceleration;
-    } else {
-      forwardSpeed = rawForwardSpeed;
-    }
-    if (rawTurnSpeed >= turnSpeed + maxAcceleration){
-      turnSpeed = turnSpeed + maxAcceleration;
-    } else {
-      turnSpeed = rawTurnSpeed;
-    }
+    forwardSpeed = Math.max(forwardSpeed + maxAcceleration, rawForwardSpeed);
+    turnSpeed = Math.max(turnSpeed + maxAcceleration, rawTurnSpeed);
 
-    m_robotDrive.arcadeDrive(-m_controller.getLeftY(), -m_controller.getRightX());
+    m_robotDrive.arcadeDrive(forwardSpeed, turnSpeed);
   }
 
   /** This function is called once each time the robot enters test mode. */
