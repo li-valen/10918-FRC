@@ -65,8 +65,8 @@ public class Robot extends TimedRobot {
     double rawTurnSpeed = -m_controller.getRightX();
 
     double maxAcceleration = 0.05;
-    forwardSpeed = Math.max(forwardSpeed + maxAcceleration, rawForwardSpeed);
-    turnSpeed = Math.max(turnSpeed + maxAcceleration, rawTurnSpeed);
+    forwardSpeed = Math.min(forwardSpeed + maxAcceleration, rawForwardSpeed);
+    turnSpeed = Math.min(turnSpeed + maxAcceleration, rawTurnSpeed);
 
     m_robotDrive.arcadeDrive(forwardSpeed, turnSpeed);
   }
