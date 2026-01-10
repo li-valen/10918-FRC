@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import java.nio.channels.AcceptPendingException;
+
 import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
@@ -65,18 +67,10 @@ public class Robot extends TimedRobot {
     double rawTurnSpeed = -m_controller.getRightX();
 
     double maxAcceleration = 0.05;
-    if (rawForwardSpeed >= forwardSpeed + maxAcceleration){
-      forwardSpeed = forwardSpeed + maxAcceleration;
-    } else {
-      forwardSpeed = rawForwardSpeed;
-    }
-    if (rawTurnSpeed >= turnSpeed + maxAcceleration){
-      turnSpeed = turnSpeed + maxAcceleration;
-    } else {
-      turnSpeed = rawTurnSpeed;
-    }
+    forwardSpeed = Math.min(forwardSpeed + maxAcceleration, rawForwardSpeed);
+    turnSpeed = Math.min(turnSpeed + maxAcceleration, rawTurnSpeed);
 
-    m_robotDrive.arcadeDrive(-m_controller.getLeftY(), -m_controller.getRightX());
+    m_robotDrive.arcadeDrive(forwardSpeed, turnSpeed);
   }
 
   /** This function is called once each time the robot enters test mode. */
