@@ -50,17 +50,28 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
+    // if (m_timer.get() >= 1.0 && m_timer.get() <= 2.0) {
+    //   forwardSpeed = 0.5;
+    //   m_robotDrive.arcadeDrive(forwardSpeed, 0);
+    // } else {
+    //   forwardSpeed = 0;
+    //   m_robotDrive.arcadeDrive(forwardSpeed, 0);
+    // }
   }
 
-  /** This function is called once each time the robot enters teleoperated mode. */
+
   @Override
   public void teleopInit() {
     
+    
   }
 
-  /** This function is called periodically during teleoperated mode. */
+
   @Override
   public void teleopPeriodic() {
+    double forwardSpeed = 0;
+    double turnSpeed = 0;
+    
     double rawForwardSpeed = -m_controller.getLeftY();
     double rawTurnSpeed = -m_controller.getRightX();
 

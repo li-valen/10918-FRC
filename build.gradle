@@ -41,6 +41,11 @@ deploy {
     }
 }
 
+repositories {
+    mavenCentral()
+    maven { url "https://frcmaven.wpi.edu/artifactory/release" }
+}
+
 def deployArtifact = deploy.targets.roborio.artifacts.frcJava
 
 // Set to true to use debug for JNI.
