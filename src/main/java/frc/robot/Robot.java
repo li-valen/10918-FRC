@@ -4,87 +4,151 @@
 
 package frc.robot;
 
+<<<<<<< HEAD
+import java.nio.channels.AcceptPendingException;
+
 import edu.wpi.first.util.sendable.SendableRegistry;
+=======
+import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.Utils;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
+
+>>>>>>> PheonixTuner
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 
 /**
- * The methods in this class are called automatically corresponding to each mode, as described in
- * the TimedRobot documentation. If you change the name of this class or the package after creating
- * this project, you must also update the manifest file in the resource directory.
+ * The VM is configured to automatically run this class, and to call the functions corresponding to
+ * each mode, as described in the TimedRobot documentation. If you change the name of this class or
+ * the package after creating this project, you must also update the build.gradle file in the
+ * project.
  */
 public class Robot extends TimedRobot {
-  private final PWMSparkMax m_leftDrive = new PWMSparkMax(1);
-  private final PWMSparkMax m_rightDrive = new PWMSparkMax(2);
-  private final DifferentialDrive m_robotDrive =
-      new DifferentialDrive(m_leftDrive::set, m_rightDrive::set);
-  private final XboxController m_controller = new XboxController(0);
-  private final Timer m_timer = new Timer();
-  double forwardSpeed = 0;
-  double turnSpeed = 0;
-  
+  private final CANBus kCANBus = new CANBus("canivore");
 
-  /** Called once at the beginning of the robot program. */
+  private final TalonFX leftLeader = new TalonFX(1, kCANBus);
+  private final TalonFX leftFollower = new TalonFX(2, kCANBus);
+  private final TalonFX rightLeader = new TalonFX(3, kCANBus);
+  private final TalonFX rightFollower = new TalonFX(4, kCANBus);
+
+  private final DutyCycleOut leftOut = new DutyCycleOut(0);
+  private final DutyCycleOut rightOut = new DutyCycleOut(0);
+
+  private final XboxController joystick = new XboxController(0);
+
+  private int printCount = 0;
+
+  /**
+   * This function is run when the robot is first started up and should be used for any
+   * initialization code.
+   */
   public Robot() {
-    m_rightDrive.setInverted(true);
-    m_leftDrive.addFollower(new PWMSparkMax(3));
-    m_rightDrive.addFollower(new PWMSparkMax(4));
-    SendableRegistry.addChild(m_robotDrive, m_leftDrive);
-    SendableRegistry.addChild(m_robotDrive, m_rightDrive);
-    m_robotDrive.setMaxOutput(0.5);
-    
-    
-    // We need to invert one side of the drivetrain so that positive voltages
-    // result in both sides moving forward. Depending on how your robot's
-    // gearbox is constructed, you might have to invert the left side instead.
+    /* Configure the devices */
+    var leftConfiguration = new TalonFXConfiguration();
+    var rightConfiguration = new TalonFXConfiguration();
+
+    /* User can optionally change the configs or leave it alone to perform a factory default */
+    leftConfiguration.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+    rightConfiguration.MotorOutput.Inverted = InvertedValue.Clockwise_Positive;
+
+    leftLeader.getConfigurator().apply(leftConfiguration);
+    leftFollower.getConfigurator().apply(leftConfiguration);
+    rightLeader.getConfigurator().apply(rightConfiguration);
+    rightFollower.getConfigurator().apply(rightConfiguration);
+
+    /* Set up followers to follow leaders */
+    leftFollower.setControl(new Follower(leftLeader.getDeviceID(), false));
+    rightFollower.setControl(new Follower(rightLeader.getDeviceID(), false));
+  
+    leftLeader.setSafetyEnabled(true);
+    rightLeader.setSafetyEnabled(true);
+
+    if (Utils.isSimulation()){
+      leftOut.EnableFOC = false;
+      rightOut.EnableFOC = false;
+    }
   }
 
-  /** This function is run once each time the robot enters autonomous mode. */
+  @Override
+  public void robotPeriodic() {
+    if (++printCount >= 10) {
+      printCount = 0;
+      System.out.println("Left out: " + leftLeader.get());
+      System.out.println("Right out: " + rightLeader.get());
+      System.out.println("Left Pos: " + leftLeader.getPosition());
+      System.out.println("Right Pos: " + rightLeader.getPosition());
+    }
+  }
+
   @Override
   public void autonomousInit() {
+    if (++printCount >= 10) {
+      printCount = 0;
+      System.out.println("Left out: " + leftLeader.get());
+      System.out.println("Right out: " + rightLeader.get());
+      System.out.println("Left Pos: " + leftLeader.getPosition());
+      System.out.println("Right Pos: " + rightLeader.getPosition());
+    }
   }
 
-  /** This function is called periodically during autonomous. */
   @Override
-  public void autonomousPeriodic() {
-  }
+  public void autonomousPeriodic() {}
 
-  /** This function is called once each time the robot enters teleoperated mode. */
   @Override
-  public void teleopInit() {
-    
-  }
+  public void teleopInit() {}
 
-  /** This function is called periodically during teleoperated mode. */
   @Override
   public void teleopPeriodic() {
+<<<<<<< HEAD
     double rawForwardSpeed = -m_controller.getLeftY();
     double rawTurnSpeed = -m_controller.getRightX();
 
     double maxAcceleration = 0.05;
-    if (rawForwardSpeed >= forwardSpeed + maxAcceleration){
-      forwardSpeed = forwardSpeed + maxAcceleration;
-    } else {
-      forwardSpeed = rawForwardSpeed;
-    }
-    if (rawTurnSpeed >= turnSpeed + maxAcceleration){
-      turnSpeed = turnSpeed + maxAcceleration;
-    } else {
-      turnSpeed = rawTurnSpeed;
-    }
+    forwardSpeed = Math.min(forwardSpeed + maxAcceleration, rawForwardSpeed);
+    turnSpeed = Math.min(turnSpeed + maxAcceleration, rawTurnSpeed);
 
-    m_robotDrive.arcadeDrive(-m_controller.getLeftY(), -m_controller.getRightX());
+    m_robotDrive.arcadeDrive(forwardSpeed, turnSpeed);
+=======
+    /* Get forward and rotational throttle from joystick */
+    /* invert the joystick Y because forward Y is negative */
+    double fwd = -joystick.getLeftY();
+    double rot = joystick.getRightX();
+    /* Set output to control frames */
+    leftOut.Output = fwd + rot;
+    rightOut.Output = fwd - rot;
+    /* And set them to the motors */
+    if (!joystick.getAButton()) {
+      leftLeader.setControl(leftOut);
+      rightLeader.setControl(rightOut);
+    }
+>>>>>>> PheonixTuner
   }
 
-  /** This function is called once each time the robot enters test mode. */
+  @Override
+  public void disabledInit() {}
+
+  @Override
+  public void disabledPeriodic() {
+    /* Zero out controls so we aren't just relying on the enable frame */
+    leftOut.Output = 0;
+    rightOut.Output = 0;
+    leftLeader.setControl(leftOut);
+    rightLeader.setControl(rightOut);
+  }
+
   @Override
   public void testInit() {}
 
-  /** This function is called periodically during test mode. */
   @Override
   public void testPeriodic() {}
-  
+
+  @Override
+  public void simulationInit() {}
+
+  @Override
+  public void simulationPeriodic() {}
 }
