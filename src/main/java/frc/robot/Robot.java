@@ -5,6 +5,7 @@
 package frc.robot;
 
 import edu.wpi.first.util.sendable.SendableRegistry;
+import edu.wpi.first.wpilibj.PWM;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
@@ -19,12 +20,18 @@ import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 public class Robot extends TimedRobot {
   private final PWMSparkMax m_leftDrive = new PWMSparkMax(1);
   private final PWMSparkMax m_rightDrive = new PWMSparkMax(2);
+
+  private final PWMSparkMax m_output = new PWMSparkMax(2); // change later
+  private final PWMSparkMax m_input = new PWMSparkMax(2); // change later
+
   private final DifferentialDrive m_robotDrive =
       new DifferentialDrive(m_leftDrive::set, m_rightDrive::set);
   private final XboxController m_controller = new XboxController(0);
   private final Timer m_timer = new Timer();
   double forwardSpeed = 0;
   double turnSpeed = 0;
+
+
   
 
   /** Called once at the beginning of the robot program. */
@@ -45,12 +52,53 @@ public class Robot extends TimedRobot {
   /** This function is run once each time the robot enters autonomous mode. */
   @Override
   public void autonomousInit() {
+    m_timer.reset();
   }
 
   /** This function is called periodically during autonomous. */
   @Override
   public void autonomousPeriodic() {
-  }
+      m_timer.start();
+
+      // Move the Robot Back
+      if (m_timer.get() < 1.5) {
+        m_robotDrive.arcadeDrive(0.5, 0, false);
+      } else if (m_timer.get() == 1.5) {
+        m_robotDrive.arcadeDrive(0, 0, false);
+      }
+
+      if (m_timer.get() < 5.0) {
+        // make output motor go forward
+        m_output.set(0.5);
+      } else if (m_timer.get() == 5.0) {
+        m_output.set(0);
+      }
+
+      if (m_timer.get() < 10) {
+        m_robotDrive.arcadeDrive(-1, 0, false);
+      } else if (m_timer.get() == 10) {
+        m_robotDrive.arcadeDrive(0, 0, false);
+      }
+      
+      if (m_timer.get() < 13) {
+
+      }
+
+    
+
+
+
+
+
+    if (m_timer.get() < 2.0) {
+      m_robotDrive.arcadeDrive(0.5, 0, false);
+    } else if (m_timer.get() < 4.0) {
+      m_robotDrive.arcadeDrive(-0.5, 0, false);
+    } else if (m_timer.get() < 5.0) {
+      m_robotDrive.arcadeDrive(0, -1, false);
+    }
+  } 
+  
 
   /** This function is called once each time the robot enters teleoperated mode. */
   @Override
@@ -87,4 +135,5 @@ public class Robot extends TimedRobot {
   @Override
   public void testPeriodic() {}
   
+
 }
