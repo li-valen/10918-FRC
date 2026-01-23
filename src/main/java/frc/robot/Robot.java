@@ -1,41 +1,56 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot;
 
-import edu.wpi.first.util.sendable.SendableRegistry;
+import edu.wpi.first.wpilibj.PS4Controller;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
-/**
- * The methods in this class are called automatically corresponding to each mode, as described in
- * the TimedRobot documentation. If you change the name of this class or the package after creating
- * this project, you must also update the manifest file in the resource directory.
- */
+// REV Imports
+import com.revrobotics.spark.SparkMax;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkMaxConfig;
+import com.revrobotics.spark.SparkBase.PersistMode;
+import com.revrobotics.spark.SparkBase.ResetMode;
+
 public class Robot extends TimedRobot {
-  private final PWMSparkMax m_leftDrive = new PWMSparkMax(1);
-  private final PWMSparkMax m_rightDrive = new PWMSparkMax(2);
-  private final DifferentialDrive m_robotDrive =
-      new DifferentialDrive(m_leftDrive::set, m_rightDrive::set);
-  private final XboxController m_controller = new XboxController(0);
-  private final Timer m_timer = new Timer();
-  double forwardSpeed = 0;
-  double turnSpeed = 0;
+  // SparkMax objects (MotorType.kBrushless is for NEOs)
+  private final SparkMax leftLeader = new SparkMax(1, MotorType.kBrushed);
+  private final SparkMax leftFollower = new SparkMax(2, MotorType.kBrushed);
+  private final SparkMax rightLeader = new SparkMax(3, MotorType.kBrushed);
+  private final SparkMax rightFollower = new SparkMax(4, MotorType.kBrushed);
+
+  private final SparkMax input = new SparkMax(5, MotorType.kBrushed);
+  private final SparkMax output = new SparkMax(6, MotorType.kBrushed);
+  private boolean inputRunning = false;
+  private boolean outputRunning = false;
+
+  private final PS4Controller joystick = new PS4Controller(0);
   
 
-  /** Called once at the beginning of the robot program. */
+  private int printCount = 0;
+
   public Robot() {
-    m_rightDrive.setInverted(true);
-    m_leftDrive.addFollower(new PWMSparkMax(3));
-    m_rightDrive.addFollower(new PWMSparkMax(4));
-    SendableRegistry.addChild(m_robotDrive, m_leftDrive);
-    SendableRegistry.addChild(m_robotDrive, m_rightDrive);
-    m_robotDrive.setMaxOutput(0.5);
+    /* Create Config Objects */
+    SparkMaxConfig leftConfig = new SparkMaxConfig();
+    SparkMaxConfig rightConfig = new SparkMaxConfig();
+
+    /* Set Inversions */
+    leftConfig.inverted(false);
+    rightConfig.inverted(true);
+
+    /* Set Following */
+    // On SparkMax, the follower config points to the Leader's ID
+    SparkMaxConfig leftFollowerConfig = new SparkMaxConfig();
+    leftFollowerConfig.follow(leftLeader.getDeviceId()); // Follows Left Leader (ID 1)
     
+    SparkMaxConfig rightFollowerConfig = new SparkMaxConfig();
+    rightFollowerConfig.follow(rightLeader.getDeviceId()); // Follows Right Leader (ID 3)
+
+    /* Apply Configs */
+    // kPersistParameters saves settings even if the robot loses power
+    // kResetSafeParameters ensures a clean state before applying
+    leftLeader.configure(leftConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    leftFollower.configure(leftFollowerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     
     // We need to invert one side of the drivetrain so that positive voltages
     // result in both sides moving forward. Depending on how your robot's
@@ -43,44 +58,48 @@ public class Robot extends TimedRobot {
 
   }
 
-  /** This function is run once each time the robot enters autonomous mode. */
   @Override
-  public void autonomousInit() {
+  public void robotPeriodic() {
+    if (++printCount >= 10) {
+      printCount = 0;
+      // .get() returns -1.0 to 1.0
+      System.out.println("Left Speed: " + leftLeader.get());
+      System.out.println("Right Speed: " + rightLeader.get());
+    }
   }
 
-  /** This function is called periodically during autonomous. */
-  @Override
-  public void autonomousPeriodic() {
-  }
-
-  /** This function is called once each time the robot enters teleoperated mode. */
-  @Override
-  public void teleopInit() {
-    
-  }
-
-  /** This function is called periodically during teleoperated mode. */
   @Override
   public void teleopPeriodic() {
-    double rawForwardSpeed = -m_controller.getLeftY();
-    double rawTurnSpeed = -m_controller.getRightX();
+    double fwd = -joystick.getLeftY();
+    double rot = joystick.getRightX();
+ 
+    double leftSpeed = fwd + rot;
+    double rightSpeed = fwd - rot;
 
-    double maxAcceleration = 0.05;
-    if (rawForwardSpeed >= forwardSpeed + maxAcceleration){
-      forwardSpeed = forwardSpeed + maxAcceleration;
-    } else {
-      forwardSpeed = rawForwardSpeed;
-    }
-    if (rawTurnSpeed >= turnSpeed + maxAcceleration){
-      turnSpeed = turnSpeed + maxAcceleration;
-    } else {
-      turnSpeed = rawTurnSpeed;
+    leftLeader.set(leftSpeed);
+    rightLeader.set(rightSpeed);
+
+    if (joystick.getSquareButtonPressed()) {
+      inputRunning = !inputRunning;
     }
 
-    m_robotDrive.arcadeDrive(-m_controller.getLeftY(), -m_controller.getRightX());
+    if (joystick.getCrossButtonPressed()) {
+      outputRunning = !outputRunning;
+    }
+
+    if (inputRunning) {
+      input.set(0.7);
+    } else {
+      input.set(0);
+    }
+
+    if (outputRunning) {
+      output.set(0.7);
+    } else {
+      output.set(0);
+    }
   }
 
-  /** This function is called once each time the robot enters test mode. */
   @Override
   public void testInit() {}
 
