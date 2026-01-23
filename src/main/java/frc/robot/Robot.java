@@ -20,6 +20,7 @@ public class Robot extends TimedRobot {
   private final SparkMax rightFollower = new SparkMax(4, MotorType.kBrushed);
 
   private final SparkMax input = new SparkMax(5, MotorType.kBrushed);
+  private final SparkMax output = new SparkMax(6, MotorType.kBrushed);
   private boolean inputRunning = false;
   private boolean outputRunning = false;
 
