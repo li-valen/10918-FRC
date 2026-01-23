@@ -52,10 +52,8 @@ public class Robot extends TimedRobot {
     leftLeader.configure(leftConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     leftFollower.configure(leftFollowerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     
-    // We need to invert one side of the drivetrain so that positive voltages
-    // result in both sides moving forward. Depending on how your robot's
-    // gearbox is constructed, you might have to invert the left side instead.
-
+    rightLeader.configure(rightConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    rightFollower.configure(rightFollowerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
   }
 
   @Override
@@ -101,18 +99,8 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void testInit() {}
-
-  /** This function is called periodically during test mode. */
-  @Override
-  public void testPeriodic() {}
-  
-  // Instead of using multiple lines, you can simply use  DisabledInit and "stopMotor()" so the motors stop instantly.
-  @Override
-  public void disabledInit()
-    {
-      m_robotDrive.stopMotor();
-
+  public void disabledPeriodic() {
+    leftLeader.set(0);
+    rightLeader.set(0);
   }
-
 }
