@@ -19,12 +19,12 @@ public class Robot extends TimedRobot {
   private final SparkMax rightLeader = new SparkMax(3, MotorType.kBrushed);
   private final SparkMax rightFollower = new SparkMax(4, MotorType.kBrushed);
 
-  private final SparkMax input = new SparkMax(5, MotorType.kBrushed);
-  private final SparkMax output = new SparkMax(6, MotorType.kBrushed);
-  private boolean inputRunning = false;
-  private boolean outputRunning = false;
+  // private final SparkMax input = new SparkMax(5, MotorType.kBrushed);
+  // private final SparkMax output = new SparkMax(6, MotorType.kBrushed);
+  // private boolean inputRunning = false;
+  // private boolean outputRunning = false;
 
-  private final PS4Controller joystick = new PS4Controller(0);
+  private final XboxController joystick = new XboxController(0);
   
 
   private int printCount = 0;
@@ -35,8 +35,8 @@ public class Robot extends TimedRobot {
     SparkMaxConfig rightConfig = new SparkMaxConfig();
 
     /* Set Inversions */
-    leftConfig.inverted(false);
-    rightConfig.inverted(true);
+    leftConfig.inverted(true);
+    rightConfig.inverted(false);
 
     /* Set Following */
     // On SparkMax, the follower config points to the Leader's ID
@@ -69,7 +69,7 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
     double fwd = -joystick.getLeftY();
-    double rot = joystick.getRightX();
+    double rot = -joystick.getRightX();
  
     double leftSpeed = fwd + rot;
     double rightSpeed = fwd - rot;
@@ -77,25 +77,25 @@ public class Robot extends TimedRobot {
     leftLeader.set(leftSpeed);
     rightLeader.set(rightSpeed);
 
-    if (joystick.getSquareButtonPressed()) {
-      inputRunning = !inputRunning;
-    }
+    // if (joystick.getSquareButtonPressed()) {
+    //   inputRunning = !inputRunning;
+    // }
 
-    if (joystick.getCrossButtonPressed()) {
-      outputRunning = !outputRunning;
-    }
+    // if (joystick.getCrossButtonPressed()) {
+    //   outputRunning = !outputRunning;
+    // }
 
-    if (inputRunning) {
-      input.set(0.7);
-    } else {
-      input.set(0);
-    }
+    // if (inputRunning) {
+    //   input.set(0.7);
+    // } else {
+    //   input.set(0);
+    // }
 
-    if (outputRunning) {
-      output.set(0.7);
-    } else {
-      output.set(0);
-    }
+    // if (outputRunning) {
+    //   output.set(0.7);
+    // } else {
+    //   output.set(0);
+    // }
   }
 
   @Override
