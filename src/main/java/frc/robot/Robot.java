@@ -1,9 +1,13 @@
 package frc.robot;
 
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.wpilibj.PS4Controller;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
+
+import java.util.Queue;
 
 // REV Imports
 import com.revrobotics.spark.SparkMax;
@@ -14,19 +18,22 @@ import com.revrobotics.spark.SparkBase.ResetMode;
 
 public class Robot extends TimedRobot {
   // SparkMax objects (MotorType.kBrushless is for NEOs)
-  private final SparkMax leftLeader = new SparkMax(1, MotorType.kBrushed);
-  private final SparkMax leftFollower = new SparkMax(2, MotorType.kBrushed);
-  private final SparkMax rightLeader = new SparkMax(3, MotorType.kBrushed);
-  private final SparkMax rightFollower = new SparkMax(4, MotorType.kBrushed);
+  private final SparkMax leftLeader = new SparkMax(5, MotorType.kBrushed);
+  private final SparkMax leftFollower = new SparkMax(6, MotorType.kBrushed);
+  private final SparkMax rightLeader = new SparkMax(8, MotorType.kBrushed);
+  private final SparkMax rightFollower = new SparkMax(7, MotorType.kBrushed);
 
-  // private final SparkMax input = new SparkMax(5, MotorType.kBrushed);
-  // private final SparkMax output = new SparkMax(6, MotorType.kBrushed);
-  // private boolean inputRunning = false;
-  // private boolean outputRunning = false;
+  private final SparkMax input = new SparkMax(1, MotorType.kBrushed);
+  private final SparkMax output = new SparkMax(2, MotorType.kBrushed);
+  private boolean inputRunning = false;
+  private boolean outputRunning = false;
 
   private final XboxController joystick = new XboxController(0);
+    Timer timer = new Timer();
+    double forwardSpeed;
+    double turnSpeed;
   
-
+  
   private int printCount = 0;
 
   public Robot() {
@@ -63,13 +70,15 @@ public class Robot extends TimedRobot {
       // .get() returns -1.0 to 1.0
       System.out.println("Left Speed: " + leftLeader.get());
       System.out.println("Right Speed: " + rightLeader.get());
+      System.out.println("Input Running: " + inputRunning);
+      System.out.println("Output Running: " + outputRunning);
     }
   }
 
   @Override
   public void teleopPeriodic() {
     double fwd = -joystick.getLeftY();
-    double rot = -joystick.getRightX();
+    double rot = joystick.getRightX();
  
     double leftSpeed = fwd + rot;
     double rightSpeed = fwd - rot;
@@ -77,26 +86,48 @@ public class Robot extends TimedRobot {
     leftLeader.set(leftSpeed);
     rightLeader.set(rightSpeed);
 
-    // if (joystick.getSquareButtonPressed()) {
-    //   inputRunning = !inputRunning;
-    // }
+    if (joystick.getAButtonPressed()) {
+      inputRunning = !inputRunning;
+    }
 
-    // if (joystick.getCrossButtonPressed()) {
-    //   outputRunning = !outputRunning;
-    // }
+    if (joystick.getBButtonPressed()) {
+      outputRunning = !outputRunning;
+    }
 
-    // if (inputRunning) {
-    //   input.set(0.7);
-    // } else {
-    //   input.set(0);
-    // }
+    if (inputRunning) {
+      input.set(0.7);
+    } else {
+      input.set(0);
+    }
 
-    // if (outputRunning) {
-    //   output.set(0.7);
-    // } else {
-    //   output.set(0);
-    // }
+    if (outputRunning) {
+      output.set(0.7);
+    } else {
+      output.set(0);
+    }
   }
+
+//  @Override
+//   public void autonomousInit() {
+//     forwardSpeed = 0;
+//     turnSpeed = 0;
+//   }
+
+//   /** This function is called periodically during autonomous. */
+//   @Override
+//   public void autonomousPeriodic() {
+//       timer.start();
+//       if (timer.get() < 1) {
+//         forwardSpeed = 1;
+//         turnSpeed = 2;
+//       }
+
+
+
+
+//     leftLeader.set(forwardSpeed + turnSpeed);
+//     rightLeader.set(forwardSpeed - turnSpeed);
+//   }
 
   @Override
   public void disabledPeriodic() {
