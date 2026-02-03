@@ -1,12 +1,16 @@
 package frc.robot;
 
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.PS4Controller;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
+import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Queue;
 
 // REV Imports
@@ -29,10 +33,12 @@ public class Robot extends TimedRobot {
   private boolean outputRunning = false;
 
   private final XboxController joystick = new XboxController(0);
-    Timer timer = new Timer();
-    double forwardSpeed;
-    double turnSpeed;
-  
+  Timer timer = new Timer();
+  double forwardSpeed;
+  double turnSpeed;
+
+  Optional<Alliance> alliance = DriverStation.getAlliance();
+  OptionalInt station = DriverStation.getLocation();
   
   private int printCount = 0;
 
@@ -107,31 +113,51 @@ public class Robot extends TimedRobot {
     }
   }
 
-//  @Override
-//   public void autonomousInit() {
-//     forwardSpeed = 0;
-//     turnSpeed = 0;
-//   }
+ @Override
+  public void autonomousInit() {
+    forwardSpeed = 0;
+    turnSpeed = 0;
 
-//   /** This function is called periodically during autonomous. */
-//   @Override
-//   public void autonomousPeriodic() {
-//       timer.start();
-//       if (timer.get() < 1) {
-//         forwardSpeed = 1;
-//         turnSpeed = 2;
-//       }
+    timer.start();
+  }
 
+  /** This function is called periodically during autonomous. */
+  @Override
+  public void autonomousPeriodic() {
+      // Left station
+      double fwd = 0; // positive - forward, negative - backward
+      double rot = 0; // positive - turn left, negative - turn right
 
+      if (station.equals(1)) {
+        if (timer.get() < 1) {
+          fwd = 0.5;
+        } else if (timer.get() < 1.5) {
+          fwd = 0;
+        } else if (timer.get() < 2.5) {
+          rot = 0.5;
+        } else if (timer.get() < 3) {
+          rot = 0;
+        } else if (timer.get() < 4) {
+          // output
+        } else if (timer.get() < 10) {
+          // output stop
+        }
+      } else if (station.equals(2)) {
 
+      } else if (station.equals(3)) {
 
-//     leftLeader.set(forwardSpeed + turnSpeed);
-//     rightLeader.set(forwardSpeed - turnSpeed);
-//   }
+      }
+
+      double leftSpeed = fwd + rot;
+      double rightSpeed = fwd - rot;
+
+      leftLeader.set(leftSpeed);
+      rightLeader.set(rightSpeed);
+    }
 
   @Override
   public void disabledPeriodic() {
     leftLeader.set(0);
     rightLeader.set(0);
   }
-}
+} 
