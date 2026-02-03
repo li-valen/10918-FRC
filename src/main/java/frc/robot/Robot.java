@@ -12,6 +12,10 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Queue;
+// Gryo imports for NavX
+import com.studica.frc.AHRS;
+import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 // REV Imports
 import com.revrobotics.spark.SparkMax;
@@ -21,7 +25,14 @@ import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 
 public class Robot extends TimedRobot {
+  //Initiating a new gyro object
+  private final AHRS m_gyro = new AHRS(AHRS.NavXComType.kMXP_SPI);
+  // PID for gyro correction, tweak kp in case of wobbling or bad correction
+  private final PIDController gyroPID = new PIDController(0.02, 0.0, 0.001);
+  private double targetAngle = 0.0;
+  private boolean gyroAssistEnabled = true;
   // SparkMax objects (MotorType.kBrushless is for NEOs)
+
   private final SparkMax leftLeader = new SparkMax(5, MotorType.kBrushed);
   private final SparkMax leftFollower = new SparkMax(6, MotorType.kBrushed);
   private final SparkMax rightLeader = new SparkMax(8, MotorType.kBrushed);
@@ -29,8 +40,12 @@ public class Robot extends TimedRobot {
 
   private final SparkMax input = new SparkMax(1, MotorType.kBrushed);
   private final SparkMax output = new SparkMax(2, MotorType.kBrushed);
-  private boolean inputRunning = false;
+  private boolean inputRunning = false;  
+  private boolean inputReverseRunning = false;
   private boolean outputRunning = false;
+
+  private double maxFwd = 0.7;
+  private double maxRot = 0.7;
 
   private final XboxController joystick = new XboxController(0);
   Timer timer = new Timer();
@@ -67,6 +82,12 @@ public class Robot extends TimedRobot {
     
     rightLeader.configure(rightConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     rightFollower.configure(rightFollowerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    //resets the gyro 
+    m_gyro.reset();
+    //configures the PID
+    gyroPID.setSetpoint(0);
+    gyroPID.setTolerance(2);
+    gyroPID.enableContinuousInput(-180, 180);
   }
 
   @Override
@@ -78,6 +99,9 @@ public class Robot extends TimedRobot {
       System.out.println("Right Speed: " + rightLeader.get());
       System.out.println("Input Running: " + inputRunning);
       System.out.println("Output Running: " + outputRunning);
+      System.out.println("InputReverse Running: " + inputReverseRunning);
+      System.out.println("Gyro Yaw:"+ m_gyro.getYaw());
+      System.out.println("Gyro Yaw:"+ m_gyro.getYaw());
     }
   }
 
@@ -85,9 +109,31 @@ public class Robot extends TimedRobot {
   public void teleopPeriodic() {
     double fwd = -joystick.getLeftY();
     double rot = joystick.getRightX();
- 
-    double leftSpeed = fwd + rot;
-    double rightSpeed = fwd - rot;
+    //makes it so that when rotating, it sets the target angle and disable gyro assist
+    if(Math.abs(rot) > 0.1){
+      targetAngle = m_gyro.getYaw();
+      gyroAssistEnabled = false;
+    } else if(Math.abs(fwd) > 0.1){
+      //if driver wants to drive forward, enable the assist
+      gyroAssistEnabled = true;
+    } else{
+      gyroAssistEnabled = false;
+    }
+    double gyroCorrection = 0;
+    
+    if (gyroAssistEnabled) {
+      gyroPID.setSetpoint(targetAngle);
+      gyroCorrection = gyroPID.calculate(m_gyro.getYaw());
+      // Limit correction strength
+      gyroCorrection = Math.max(-0.3, Math.min(0.3, gyroCorrection));
+    }
+
+
+    // fwd = Math.signum(fwd) * Math.min(maxFwd, Math.abs(fwd));
+    // rot = Math.signum(rot) * Math.min(maxRot, Math.abs(rot));
+    double finalRot = rot + gyroCorrection;
+    double leftSpeed = fwd + finalRot;
+    double rightSpeed = fwd - finalRot;
 
     leftLeader.set(leftSpeed);
     rightLeader.set(rightSpeed);
@@ -100,8 +146,14 @@ public class Robot extends TimedRobot {
       outputRunning = !outputRunning;
     }
 
+    if (joystick.getXButtonPressed()) {
+      inputReverseRunning = !inputReverseRunning;
+    }
+
     if (inputRunning) {
       input.set(0.7);
+    } else if (inputReverseRunning) {
+      input.set(-0.7);
     } else {
       input.set(0);
     }
