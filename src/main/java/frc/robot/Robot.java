@@ -1,9 +1,22 @@
 package frc.robot;
 
 import edu.wpi.first.math.controller.PIDController;
+<<<<<<< HEAD
+=======
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.PS4Controller;
+>>>>>>> a21502e14d3a9a312a98653341c2e98a3bc45d84
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
 
+<<<<<<< HEAD
+=======
+import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.Queue;
+// Gryo imports for NavX
+>>>>>>> a21502e14d3a9a312a98653341c2e98a3bc45d84
 import com.studica.frc.AHRS;
 
 import com.revrobotics.spark.SparkMax;
@@ -37,6 +50,15 @@ public class Robot extends TimedRobot {
   private double maxRot = 0.7;
 
   private final XboxController joystick = new XboxController(0);
+<<<<<<< HEAD
+=======
+  Timer timer = new Timer();
+  double forwardSpeed;
+  double turnSpeed;
+
+  Optional<Alliance> alliance = DriverStation.getAlliance();
+  OptionalInt station = DriverStation.getLocation();
+>>>>>>> a21502e14d3a9a312a98653341c2e98a3bc45d84
   
   private int printCount = 0;
 
@@ -137,9 +159,54 @@ public class Robot extends TimedRobot {
     }
   }
 
+<<<<<<< HEAD
+=======
+ @Override
+  public void autonomousInit() {
+    forwardSpeed = 0;
+    turnSpeed = 0;
+
+    timer.start();
+  }
+
+  /** This function is called periodically during autonomous. */
+  @Override
+  public void autonomousPeriodic() {
+      // Left station
+      double fwd = 0; // positive - forward, negative - backward
+      double rot = 0; // positive - turn left, negative - turn right
+
+      if (station.equals(1)) {
+        if (timer.get() < 1) {
+          fwd = 0.5;
+        } else if (timer.get() < 1.5) {
+          fwd = 0;
+        } else if (timer.get() < 2.5) {
+          rot = 0.5;
+        } else if (timer.get() < 3) {
+          rot = 0;
+        } else if (timer.get() < 4) {
+          // output
+        } else if (timer.get() < 10) {
+          // output stop
+        }
+      } else if (station.equals(2)) {
+
+      } else if (station.equals(3)) {
+
+      }
+
+      double leftSpeed = fwd + rot;
+      double rightSpeed = fwd - rot;
+
+      leftLeader.set(leftSpeed);
+      rightLeader.set(rightSpeed);
+    }
+
+>>>>>>> a21502e14d3a9a312a98653341c2e98a3bc45d84
   @Override
   public void disabledPeriodic() {
     leftLeader.set(0);
     rightLeader.set(0);
   }
-}
+} 
