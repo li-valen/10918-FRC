@@ -1,28 +1,17 @@
 package frc.robot;
 
 import edu.wpi.first.math.controller.PIDController;
-<<<<<<< HEAD
-=======
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.PS4Controller;
->>>>>>> a21502e14d3a9a312a98653341c2e98a3bc45d84
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 
-<<<<<<< HEAD
-=======
-import java.util.Optional;
-import java.util.OptionalInt;
-import java.util.Queue;
-// Gryo imports for NavX
->>>>>>> a21502e14d3a9a312a98653341c2e98a3bc45d84
 import com.studica.frc.AHRS;
 
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
-import com.revrobotics.spark.config.SparkBaseConfig.IdleMode; // Added for Brake Mode
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode; 
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 
@@ -49,16 +38,14 @@ public class Robot extends TimedRobot {
   private double maxFwd = 0.7;
   private double maxRot = 0.7;
 
-  private final XboxController joystick = new XboxController(0);
-<<<<<<< HEAD
-=======
-  Timer timer = new Timer();
-  double forwardSpeed;
-  double turnSpeed;
+  private double forwardSpeed;
+  private double turnSpeed;
 
-  Optional<Alliance> alliance = DriverStation.getAlliance();
-  OptionalInt station = DriverStation.getLocation();
->>>>>>> a21502e14d3a9a312a98653341c2e98a3bc45d84
+  private int id;
+
+  Timer timer = new Timer();
+
+  private final XboxController joystick = new XboxController(0);
   
   private int printCount = 0;
 
@@ -94,12 +81,20 @@ public class Robot extends TimedRobot {
     gyroPID.enableContinuousInput(-180, 180); 
   }
 
+  public int getTargetID() {
+    return (int) NetworkTableInstance.getDefault()
+      .getTable("limelight")
+      .getEntry("tid")
+      .getInteger(-1);
+  }
+
   @Override
   public void robotPeriodic() {
     if (++printCount >= 10) {
       printCount = 0;
       System.out.println("Gyro Yaw: " + m_gyro.getYaw());
       System.out.println("Target Angle: " + targetAngle);
+      System.out.println("id detected: " + id);
     }
   }
 
@@ -159,54 +154,52 @@ public class Robot extends TimedRobot {
     }
   }
 
-<<<<<<< HEAD
-=======
- @Override
+  @Override
   public void autonomousInit() {
-    forwardSpeed = 0;
-    turnSpeed = 0;
+    forwardSpeed = 0.0;
+    turnSpeed = 0.0;
+    id = -1;
+
+    m_gyro.reset();
 
     timer.start();
+    timer.reset();
   }
 
-  /** This function is called periodically during autonomous. */
-  @Override
-  public void autonomousPeriodic() {
-      // Left station
-      double fwd = 0; // positive - forward, negative - backward
-      double rot = 0; // positive - turn left, negative - turn right
+@Override
+public void autonomousPeriodic() {
+    double time = timer.get();
 
-      if (station.equals(1)) {
-        if (timer.get() < 1) {
-          fwd = 0.5;
-        } else if (timer.get() < 1.5) {
-          fwd = 0;
-        } else if (timer.get() < 2.5) {
-          rot = 0.5;
-        } else if (timer.get() < 3) {
-          rot = 0;
-        } else if (timer.get() < 4) {
-          // output
-        } else if (timer.get() < 10) {
-          // output stop
+    if (id == -1) {
+        id = getTargetID();
+    }
+    
+    if (id == 1) {
+        if (time < 0.5) {
+            forwardSpeed = -0.5; 
+            turnSpeed = 0;
+        } else if (time < 1.0) { 
+            forwardSpeed = 0;    
+            turnSpeed = 0;
+        } else if (time < 1.5) { 
+            forwardSpeed = 0;
+            turnSpeed = 0.2;     
+        } else {
+            forwardSpeed = 0;    
+            turnSpeed = 0;
         }
-      } else if (station.equals(2)) {
-
-      } else if (station.equals(3)) {
-
-      }
-
-      double leftSpeed = fwd + rot;
-      double rightSpeed = fwd - rot;
-
-      leftLeader.set(leftSpeed);
-      rightLeader.set(rightSpeed);
+    } else {
+      forwardSpeed = 0;
+      turnSpeed = 0;
     }
 
->>>>>>> a21502e14d3a9a312a98653341c2e98a3bc45d84
+    leftLeader.set(forwardSpeed + turnSpeed);
+    rightLeader.set(forwardSpeed - turnSpeed);
+}
+
   @Override
   public void disabledPeriodic() {
     leftLeader.set(0);
     rightLeader.set(0);
   }
-} 
+}
