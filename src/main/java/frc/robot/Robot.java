@@ -83,7 +83,7 @@ public class Robot extends TimedRobot {
 
   public int getTargetID() {
     return (int) NetworkTableInstance.getDefault()
-      .getTable("limelight")
+      .getTable("limelight-camera")
       .getEntry("tid")
       .getInteger(-1);
   }
