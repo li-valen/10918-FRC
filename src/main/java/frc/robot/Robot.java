@@ -174,23 +174,51 @@ public void autonomousPeriodic() {
         id = getTargetID();
     }
     
-    if (id == 1) {
+    if (id == 12 || id == 28); {
         if (time < 0.5) {
             forwardSpeed = -0.5; 
             turnSpeed = 0;
         } else if (time < 1.0) { 
             forwardSpeed = 0;    
-            turnSpeed = 0;
+            turnSpeed = -0.5;
         } else if (time < 1.5) { 
-            forwardSpeed = 0;
-            turnSpeed = 0.2;     
-        } else {
+            forwardSpeed = 0.5;
+            turnSpeed = 0;     
+        } else if (time < 2.0) {
             forwardSpeed = 0;    
-            turnSpeed = 0;
+            turnSpeed = 0.5;
+        } else if (time < 2.5) {
+            outputRunning = true;
+        } else if (time < 3.5) {
+            outputRunning = false;
         }
-    } else {
-      forwardSpeed = 0;
-      turnSpeed = 0;
+    } if (id == 7 || id == 23);{
+        if (time < 0.5) {
+            forwardSpeed = -0.5; 
+            turnSpeed = 0;
+        } else if (time < 1.0) { 
+            forwardSpeed = 0;    
+            turnSpeed = 0.5;
+        } else if (time < 1.5) { 
+            forwardSpeed = 0.5;
+            turnSpeed = 0;     
+        } else if (time < 2.0) {
+            forwardSpeed = 0;    
+            turnSpeed = -0.5;
+        } else if (time < 2.5) {
+            outputRunning = true;
+        } else if (time < 3.5) {
+            outputRunning = false;
+        }
+    } if (id == 9 || id == 10 || id == 25 || id == 26) {
+      if (time < 0.5) {
+            forwardSpeed = -0.5; 
+            turnSpeed = 0;
+        } else if (time < 1.0) {
+            outputRunning = true;
+        } else if (time < 2.0) {
+            outputRunning = false;
+        }
     }
 
     leftLeader.set(forwardSpeed + turnSpeed);
