@@ -1,7 +1,9 @@
 package frc.robot;
 
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
@@ -11,7 +13,7 @@ import com.studica.frc.AHRS;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
-import com.revrobotics.spark.config.SparkBaseConfig.IdleMode; 
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 
@@ -28,86 +30,202 @@ public class Robot extends TimedRobot {
   private final SparkMax rightLeader = new SparkMax(8, MotorType.kBrushed);
   private final SparkMax rightFollower = new SparkMax(7, MotorType.kBrushed);
 
-  private final SparkMax input = new SparkMax(1, MotorType.kBrushed);
-  private final SparkMax output = new SparkMax(2, MotorType.kBrushed);
-  
-  private boolean inputRunning = false;
-  private boolean inputReverseRunning = false;
-  private boolean outputRunning = false;
+  private final SparkMax inputLeader = new SparkMax(2, MotorType.kBrushless);
+  private final SparkMax inputFollower = new SparkMax(3, MotorType.kBrushless);
+
+  private final SparkMax climb = new SparkMax(4, MotorType.kBrushed);
+  private final SparkMax indexer = new SparkMax(1, MotorType.kBrushed);
+
+  private final DutyCycleEncoder climbEncoder = new DutyCycleEncoder(0);
+
+  private final double wheelDiameter = 6.0;
+  private final double wheelCircumference = Math.PI * wheelDiameter;
+  private final double climbInputTeeth = 10;
+  private final double climbOutputTeeth = 28;
+  private final double gearRatio = climbOutputTeeth / climbInputTeeth;
+
+  private boolean inputLeaderRunning = false;
+  private boolean inputLeaderReverseRunning = false;
+  private boolean indexerRunning = false;
 
   private double maxFwd = 0.7;
-  private double maxRot = 0.7;
 
-  private double forwardSpeed;
-  private double turnSpeed;
+  private boolean autoStarted = false;
+  private double forwardSpeed = 0;
+  private double turnSpeed = 0;
+
+  private double leftTrigger;
+  private double rightTrigger;
 
   private int id;
+  private double distanceToTag;
 
   Timer timer = new Timer();
 
   private final XboxController joystick = new XboxController(0);
-  
+
   private int printCount = 0;
 
   public Robot() {
     SparkMaxConfig leftConfig = new SparkMaxConfig();
     SparkMaxConfig rightConfig = new SparkMaxConfig();
+    SparkMaxConfig inputConfig = new SparkMaxConfig();
 
     leftConfig.inverted(true);
     rightConfig.inverted(false);
-
-    // FIX: Set Brake Mode so motors stop instantly when power is 0
     leftConfig.idleMode(IdleMode.kBrake);
     rightConfig.idleMode(IdleMode.kBrake);
 
+    inputConfig.inverted(false);
+    inputConfig.idleMode(IdleMode.kBrake);
+
     SparkMaxConfig leftFollowerConfig = new SparkMaxConfig();
-    leftFollowerConfig.follow(leftLeader.getDeviceId()); 
+    leftFollowerConfig.follow(leftLeader.getDeviceId());
     leftFollowerConfig.idleMode(IdleMode.kBrake);
 
     SparkMaxConfig rightFollowerConfig = new SparkMaxConfig();
     rightFollowerConfig.follow(rightLeader.getDeviceId());
     rightFollowerConfig.idleMode(IdleMode.kBrake);
 
+    SparkMaxConfig inputFollowerConfig = new SparkMaxConfig();
+    inputFollowerConfig.follow(inputLeader.getDeviceId(), true);
+    inputFollowerConfig.idleMode(IdleMode.kBrake);
+
     leftLeader.configure(leftConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     leftFollower.configure(leftFollowerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-
     rightLeader.configure(rightConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     rightFollower.configure(rightFollowerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-
+    inputLeader.configure(inputConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    inputFollower.configure(inputFollowerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     m_gyro.reset();
-    
+
     gyroPID.setSetpoint(0);
-    gyroPID.setTolerance(2); 
-    gyroPID.enableContinuousInput(-180, 180); 
+    gyroPID.setTolerance(2);
+    gyroPID.enableContinuousInput(-180, 180);
   }
 
   public int getTargetID() {
     return (int) NetworkTableInstance.getDefault()
-      .getTable("limelight-camera")
-      .getEntry("tid")
-      .getInteger(-1);
+        .getTable("limelight")
+        .getEntry("tid")
+        .getInteger(-1);
   }
+
+  // Auton set 1 - for IDs 12 and 28 (right side)
+  // public void autonset1(double time) {
+  //   if (time < 0.5) {
+  //     forwardSpeed = -0.5;
+  //     turnSpeed = 0;
+  //   } else if (time < 1.0) {
+  //     forwardSpeed = 0;
+  //     turnSpeed = -0.5;
+  //   } else if (time < 1.5) {
+  //     forwardSpeed = 0.5;
+  //     turnSpeed = 0;
+  //   } else if (time < 2.0) {
+  //     forwardSpeed = 0;
+  //     turnSpeed = 0.5;
+  //   } else if (time < 2.5) {
+  //     forwardSpeed = 0;
+  //     turnSpeed = 0;
+  //     outputRunning = true;
+  //   } else if (time < 3.5) {
+  //     outputRunning = false;
+  //   } else {
+  //     forwardSpeed = 0;
+  //     turnSpeed = 0;
+  //   }
+  // }
+
+  // // Auton set 2 - for IDs 7 and 23 (left side)
+  // public void autonset2(double time) {
+  //   if (time < 0.5) {
+  //     forwardSpeed = -0.5;
+  //     turnSpeed = 0;
+  //   } else if (time < 1.0) {
+  //     forwardSpeed = 0;
+  //     turnSpeed = 0.5;
+  //   } else if (time < 1.5) {
+  //     forwardSpeed = 0.5;
+  //     turnSpeed = 0;
+  //   } else if (time < 2.0) {
+  //     forwardSpeed = 0;
+  //     turnSpeed = -0.5;
+  //   } else if (time < 2.5) {
+  //     forwardSpeed = 0;
+  //     turnSpeed = 0;
+  //     outputRunning = true;
+  //   } else if (time < 3.5) {
+  //     outputRunning = false;
+  //   } else {
+  //     forwardSpeed = 0;
+  //     turnSpeed = 0;
+  //   }
+  // }
+
+  // // Auton set 3 - for IDs 9, 10, 25, 26 (middle)
+  // public void autonset3(double time) {
+  //   if (time < 0.5) {
+  //     forwardSpeed = -0.5;
+  //     turnSpeed = 0;
+  //   } else if (time < 1.0) {
+  //     forwardSpeed = 0;
+  //     turnSpeed = 0;
+  //     outputRunning = true;
+  //   } else if (time < 2.0) {
+  //     outputRunning = false;
+  //   } else {
+  //     forwardSpeed = 0;
+  //     turnSpeed = 0;
+  //   }
+  // }
 
   @Override
   public void robotPeriodic() {
+    id = getTargetID();
+    boolean hasTarget = LimelightHelpers.getTV("limelight");
+
+    if (hasTarget) {
+      Pose3d targetPose = LimelightHelpers.getBotPose3d_TargetSpace("limelight");
+      double distanceMeters = Math.hypot(targetPose.getX(), targetPose.getY());
+
+      if (distanceMeters > 0.1) {
+        distanceToTag = distanceMeters;
+      } else {
+        double targetHeight = 1.397;
+        double limelightHeight = 0.508;
+        double limelightMountAngle = 30.0;
+        double ty = NetworkTableInstance.getDefault().getTable("limelight").getEntry("ty").getDouble(0);
+        distanceToTag = (targetHeight - limelightHeight) / Math.tan(Math.toRadians(limelightMountAngle + ty));
+      }
+    }
+
     if (++printCount >= 10) {
       printCount = 0;
       System.out.println("Gyro Yaw: " + m_gyro.getYaw());
-      System.out.println("Target Angle: " + targetAngle);
-      System.out.println("id detected: " + id);
+      System.out.println("ID detected: " + id);
+      System.out.println("Distance (cm): " + distanceToTag * 100);
+      System.out.println("Left Trigger Speed: " + leftTrigger);
+      System.out.println("Right Trigger Speed: " + rightTrigger);
+      System.out.println("A pressed: " + inputLeaderRunning);
+      System.out.println("X pressed: " + inputLeaderReverseRunning);
+      System.out.println("B pressed: " + indexerRunning);
+
     }
   }
 
-@Override
+  @Override
   public void teleopPeriodic() {
-    double leftStick = -joystick.getLeftY();
-    double rightStick = -joystick.getRightY();
+    double forward = -joystick.getLeftY();
+    double rotation = joystick.getRightX();
 
-    if (Math.abs(leftStick) < 0.05) leftStick = 0;
-    if (Math.abs(rightStick) < 0.05) rightStick = 0;
+    leftTrigger = joystick.getLeftTriggerAxis();
+    rightTrigger = joystick.getRightTriggerAxis();
+    
+    if (Math.abs(forward) < 0.05) forward = 0;
+    if (Math.abs(rotation) < 0.05) rotation = 0;
 
- 
-    boolean drivingStraight = (leftStick != 0 && rightStick != 0) && (Math.abs(leftStick - rightStick) < 0.2);
+    boolean drivingStraight = forward != 0 && rotation == 0;
 
     if (drivingStraight) {
       if (!gyroAssistEnabled) {
@@ -115,7 +233,6 @@ public class Robot extends TimedRobot {
         targetAngle = m_gyro.getYaw();
         gyroPID.setSetpoint(targetAngle);
       }
-      
       gyroCorrection = gyroPID.calculate(m_gyro.getYaw(), targetAngle);
       gyroCorrection = Math.max(-0.3, Math.min(0.3, gyroCorrection));
     } else {
@@ -124,106 +241,96 @@ public class Robot extends TimedRobot {
       targetAngle = m_gyro.getYaw();
     }
 
- 
-    double leftSpeed = leftStick - gyroCorrection;
-    double rightSpeed = rightStick + gyroCorrection;
+    double leftSpeed = forward + rotation - gyroCorrection;
+    double rightSpeed = forward - rotation + gyroCorrection;
 
     leftSpeed = Math.max(-maxFwd, Math.min(maxFwd, leftSpeed));
     rightSpeed = Math.max(-maxFwd, Math.min(maxFwd, rightSpeed));
 
-  
     leftLeader.set(leftSpeed);
     rightLeader.set(rightSpeed);
 
-    if (joystick.getAButtonPressed()) inputRunning = !inputRunning;
-    if (joystick.getBButtonPressed()) outputRunning = !outputRunning;
-    if (joystick.getXButtonPressed()) inputReverseRunning = !inputReverseRunning;
-
-    if (inputRunning) {
-      input.set(0.7);
-    } else if (inputReverseRunning) {
-      input.set(-0.7);
+    if (joystick.getAButtonPressed()){
+      inputLeaderRunning = !inputLeaderRunning;
+      inputLeaderReverseRunning = True;
+    }
+    if (joystick.getBButtonPressed()) indexerRunning = !indexerRunning;
+    if (joystick.getXButtonPressed()){
+      inputLeaderReverseRunning = !inputLeaderReverseRunning;
+      inputLeaderRunning = false;
+    }
+  
+    if (indexerRunning) {
+      indexer.set(-0.2);
     } else {
-      input.set(0);
+      indexer.set(0);
     }
 
-    if (outputRunning) {
-      output.set(0.7);
+    if (inputLeaderRunning) {
+      inputLeader.set(0.3);
+    } else if (inputLeaderReverseRunning) {
+      inputLeader.set(-0.3);
     } else {
-      output.set(0);
+      inputLeader.set(0);
     }
+
+    /*  if (leftTrigger > 0.03) {
+       climb.set(leftTrigger);
+     } else if (rightTrigger > 0.03) {
+       climb.set(-rightTrigger);  
+     }
+     else{
+      climb.set(0);
+     }
+      */
   }
 
   @Override
   public void autonomousInit() {
-    forwardSpeed = 0.0;
-    turnSpeed = 0.0;
+    autoStarted = false;
     id = -1;
-
+    forwardSpeed = 0;
+    turnSpeed = 0;
+    // outputRunning = false;
     m_gyro.reset();
-
-    timer.start();
+    timer.stop();
     timer.reset();
   }
 
-@Override
-public void autonomousPeriodic() {
-    double time = timer.get();
-
-    if (id == -1) {
-        id = getTargetID();
-    }
-    
-    if (id == 12 || id == 28); {
-        if (time < 0.5) {
-            forwardSpeed = -0.5; 
-            turnSpeed = 0;
-        } else if (time < 1.0) { 
-            forwardSpeed = 0;    
-            turnSpeed = -0.5;
-        } else if (time < 1.5) { 
-            forwardSpeed = 0.5;
-            turnSpeed = 0;     
-        } else if (time < 2.0) {
-            forwardSpeed = 0;    
-            turnSpeed = 0.5;
-        } else if (time < 2.5) {
-            outputRunning = true;
-        } else if (time < 3.5) {
-            outputRunning = false;
-        }
-    } if (id == 7 || id == 23);{
-        if (time < 0.5) {
-            forwardSpeed = -0.5; 
-            turnSpeed = 0;
-        } else if (time < 1.0) { 
-            forwardSpeed = 0;    
-            turnSpeed = 0.5;
-        } else if (time < 1.5) { 
-            forwardSpeed = 0.5;
-            turnSpeed = 0;     
-        } else if (time < 2.0) {
-            forwardSpeed = 0;    
-            turnSpeed = -0.5;
-        } else if (time < 2.5) {
-            outputRunning = true;
-        } else if (time < 3.5) {
-            outputRunning = false;
-        }
-    } if (id == 9 || id == 10 || id == 25 || id == 26) {
-      if (time < 0.5) {
-            forwardSpeed = -0.5; 
-            turnSpeed = 0;
-        } else if (time < 1.0) {
-            outputRunning = true;
-        } else if (time < 2.0) {
-            outputRunning = false;
-        }
+  @Override
+  public void autonomousPeriodic() {
+    if (!autoStarted) {
+      id = getTargetID();
+      if (id != -1) {
+        autoStarted = true;
+        timer.restart();
+      }
     }
 
-    leftLeader.set(forwardSpeed + turnSpeed);
-    rightLeader.set(forwardSpeed - turnSpeed);
-}
+    if (autoStarted) {
+      double time = timer.get();
+
+      if (id == 12 || id == 28) {
+        //autonset1(time);
+      } else if (id == 7 || id == 23) {
+        //autonset2(time);
+      } else if (id == 9 || id == 10 || id == 25 || id == 26) {
+        //autonset3(time);
+      } else {
+        forwardSpeed = 0;
+        turnSpeed = 0;
+      }
+
+      // if (outputRunning) {
+      //   output.set(0.7);
+      // } else {
+      //   output.set(0);
+      // }
+
+      leftLeader.set(forwardSpeed + turnSpeed);
+      rightLeader.set(forwardSpeed - turnSpeed);
+    }
+  }
 
   @Override
   public void disabledPeriodic() {
