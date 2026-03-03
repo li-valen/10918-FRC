@@ -99,6 +99,7 @@ public class Robot extends TimedRobot {
     inputFollower.configure(inputFollowerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     m_gyro.reset();
 
+
     gyroPID.setSetpoint(0);
     gyroPID.setTolerance(2);
     gyroPID.enableContinuousInput(-180, 180);
@@ -212,6 +213,7 @@ public class Robot extends TimedRobot {
       System.out.println("B pressed: " + indexerRunning);
 
     }
+
   }
 
   @Override
@@ -287,6 +289,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousInit() {
+    autoStarted = false;
     autoStarted = false;
     id = -1;
     forwardSpeed = 0;
