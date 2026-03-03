@@ -252,7 +252,7 @@ public class Robot extends TimedRobot {
 
     if (joystick.getAButtonPressed()){
       inputLeaderRunning = !inputLeaderRunning;
-      inputLeaderReverseRunning = True;
+      inputLeaderReverseRunning = true;
     }
     if (joystick.getBButtonPressed()) indexerRunning = !indexerRunning;
     if (joystick.getXButtonPressed()){
