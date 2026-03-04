@@ -70,6 +70,9 @@ public class Robot extends TimedRobot {
     SparkMaxConfig leftConfig = new SparkMaxConfig();
     SparkMaxConfig rightConfig = new SparkMaxConfig();
     SparkMaxConfig inputConfig = new SparkMaxConfig();
+    SparkMaxConfig climbConfig = new SparkMaxConfig();
+
+    climbConfig.idleMode(IdleMode.kBrake);
 
     leftConfig.inverted(true);
     rightConfig.inverted(false);
@@ -91,12 +94,14 @@ public class Robot extends TimedRobot {
     inputFollowerConfig.follow(inputLeader.getDeviceId(), true);
     inputFollowerConfig.idleMode(IdleMode.kBrake);
 
+
     leftLeader.configure(leftConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     leftFollower.configure(leftFollowerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     rightLeader.configure(rightConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     rightFollower.configure(rightFollowerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     inputLeader.configure(inputConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     inputFollower.configure(inputFollowerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+    climb.configure(climbConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     m_gyro.reset();
 
 
@@ -204,14 +209,9 @@ public class Robot extends TimedRobot {
     if (++printCount >= 10) {
       printCount = 0;
       System.out.println("Gyro Yaw: " + m_gyro.getYaw());
+      System.out.println("Gyro Assist Enabled: " + gyroAssistEnabled);
       System.out.println("ID detected: " + id);
       System.out.println("Distance (cm): " + distanceToTag * 100);
-      System.out.println("Left Trigger Speed: " + leftTrigger);
-      System.out.println("Right Trigger Speed: " + rightTrigger);
-      System.out.println("A pressed: " + inputLeaderRunning);
-      System.out.println("X pressed: " + inputLeaderReverseRunning);
-      System.out.println("B pressed: " + indexerRunning);
-
     }
 
   }
@@ -252,14 +252,26 @@ public class Robot extends TimedRobot {
     leftLeader.set(leftSpeed);
     rightLeader.set(rightSpeed);
 
+
+    // Input
     if (joystick.getAButtonPressed()){
-      inputLeaderRunning = !inputLeaderRunning;
-      inputLeaderReverseRunning = true;
+      inputLeaderRunning = true;
+      inputLeaderReverseRunning = false;
+      
     }
-    if (joystick.getBButtonPressed()) indexerRunning = !indexerRunning;
+
+    if (joystick.getBButtonPressed()) {
+      indexerRunning = true;
+    } 
+
+    if (joystick.getBButtonReleased()) {
+      indexerRunning = false;
+    }
+
     if (joystick.getXButtonPressed()){
-      inputLeaderReverseRunning = !inputLeaderReverseRunning;
+      inputLeaderReverseRunning = true;
       inputLeaderRunning = false;
+      indexerRunning = true;
     }
   
     if (indexerRunning) {
@@ -269,22 +281,26 @@ public class Robot extends TimedRobot {
     }
 
     if (inputLeaderRunning) {
-      inputLeader.set(0.3);
+      inputLeader.set(0.5);
+      inputFollower.set(0.5);
     } else if (inputLeaderReverseRunning) {
-      inputLeader.set(-0.3);
+      inputLeader.set(-0.5);
+      inputFollower.set(0);
     } else {
       inputLeader.set(0);
+      inputFollower.set(0);
     }
 
-    /*  if (leftTrigger > 0.03) {
+    // Climb 
+     if (leftTrigger > 0.5) {
        climb.set(leftTrigger);
-     } else if (rightTrigger > 0.03) {
+     } else if (rightTrigger > 0.5) {
        climb.set(-rightTrigger);  
      }
      else{
       climb.set(0);
      }
-      */
+
   }
 
   @Override
