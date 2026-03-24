@@ -1,0 +1,14 @@
+{
+  "SysId": {
+    "Analyzer": {
+      "window": {
+        "visible": false
+      }
+    },
+    "Log Loader": {
+      "window": {
+        "visible": false
+      }
+    }
+  }
+}
