@@ -317,6 +317,10 @@ public class Robot extends TimedRobot {
       Intake = false;
     }
 
+    if (joystick1.getYButtonPressed()) {
+      rotation = rotation;
+    }
+
     if (joystick1.getRightBumperButtonPressed()) {
       Shooter = true;
     }
