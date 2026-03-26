@@ -1,5 +1,7 @@
 package frc.robot;
 
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -170,6 +172,8 @@ public class Robot extends TimedRobot {
     gyroPID.enableContinuousInput(-180, 180);
 
     climbEncoder.getTelemetry(300);
+
+    CameraServer.startAutomaticCapture(0);
   }
 
   public int getTargetID() {
@@ -306,8 +310,8 @@ public class Robot extends TimedRobot {
     } else{
       maxFwd = 0.8;
     }
-    if(joystick.getLeftBumperButtonPressed()) {
-      rotation = joystick.getRightX() * 0.5;
+    if(joystick.getLeftBumperButton()) {
+      rotation = rotation * 0.5;
     }
     if (joystick1.getLeftBumperButtonPressed()) {
       Intake = true;
@@ -315,10 +319,6 @@ public class Robot extends TimedRobot {
 
     if (joystick1.getLeftBumperButtonReleased()) {
       Intake = false;
-    }
-
-    if (joystick1.getYButtonPressed()) {
-      rotation = rotation;
     }
 
     if (joystick1.getRightBumperButtonPressed()) {
@@ -339,13 +339,13 @@ public class Robot extends TimedRobot {
     if (alignActive)
       alignDistance(id, 0.7);
 
-    // if (joystick1.getAButtonPressed()) {
-    // reverseIntake = true;
-    // }
+    if (joystick1.getAButtonPressed()) {
+    reverseIntake = true;
+    }
 
-    // if (joystick1.getAButtonReleased()) {
-    // reverseIntake = false;
-    // }
+    if (joystick1.getAButtonReleased()) {
+    reverseIntake = false;
+    }
 
     // Then set motors AFTER:
     leftLeader.set(leftSpeed);
@@ -379,13 +379,12 @@ public class Robot extends TimedRobot {
       inputLeader.set(0);
     }
 
-    // if (reverseIntake == true) {
-    // indexer.set(-1);
-    // inputLeader.set(-1);
-    // } else {
-    // inputLeader.set(0);
-    // indexer.set(0);
-    // }
+    if (reverseIntake == true) {
+    inputLeader.set(-0.5);
+    } else {
+    inputLeader.set(0);
+    indexer.set(0);
+    }
 
     // if (leftTrigger >= 0.5) {
     // if (accumulatedDegrees < -150) {
