@@ -24,6 +24,7 @@ import java.util.OptionalInt;
 import com.andymark.jni.AM_CAN_HexBoreEncoder;
 import com.andymark.jni.AM_CAN_HexBoreEncoder.AM_EncoderStatus;
 import com.andymark.jni.AM_CAN_HexBoreEncoder.AM_Encoder_Telemetry;
+
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.LEDPattern;
 
@@ -110,8 +111,8 @@ public class Robot extends TimedRobot {
 
   private boolean reverseIntake = false;
 
-  private final XboxController joystick = new XboxController(0);
-  private final XboxController joystick1 = new XboxController(1);
+  private final XboxController driveController = new XboxController(0);
+  private final XboxController mechanismController = new XboxController(1);
 
   private double leftSpeed;
   private double rightSpeed;
@@ -266,13 +267,13 @@ public class Robot extends TimedRobot {
     rightDistance = rightEncoder.getDistance();
     int id = getTargetID();
 
-    double forward = -joystick.getLeftY();
-    double rotation = (joystick.getRightX() * 0.75);
+    double forward = -driveController.getLeftY();
+    double rotation = (driveController.getRightX() * 0.75);
 
     climbAngle = degree;
 
-    leftTrigger = joystick1.getLeftTriggerAxis();
-    rightTrigger = joystick1.getRightTriggerAxis();
+    leftTrigger = mechanismController.getLeftTriggerAxis();
+    rightTrigger = mechanismController.getRightTriggerAxis();
 
     if (Math.abs(forward) < 0.05)
       forward = 0;
@@ -295,6 +296,18 @@ public class Robot extends TimedRobot {
       gyroCorrection = 0;
     }
 
+    // BEAST mode
+    if (driveController.getRightBumperButtonPressed()) {
+      maxFwd = 1.0;
+    } else {
+      maxFwd = 0.8;
+    }
+
+    // Slow turn
+    if (driveController.getLeftBumperButton()) {
+      rotation = rotation * 0.5;
+    }
+
     leftSpeed = forward + rotation + gyroCorrection;
     rightSpeed = forward - rotation - gyroCorrection;
 
@@ -305,46 +318,39 @@ public class Robot extends TimedRobot {
     // rightLeader.set(rightSpeed);
 
     // Input
-    if(joystick.getRightBumperButtonPressed()) {
-       maxFwd = 1.0;
-    } else{
-      maxFwd = 0.8;
-    }
-    if(joystick.getLeftBumperButton()) {
-      rotation = rotation * 0.5;
-    }
-    if (joystick1.getLeftBumperButtonPressed()) {
+
+    if (mechanismController.getLeftBumperButtonPressed()) {
       Intake = true;
     }
 
-    if (joystick1.getLeftBumperButtonReleased()) {
+    if (mechanismController.getLeftBumperButtonReleased()) {
       Intake = false;
     }
 
-    if (joystick1.getRightBumperButtonPressed()) {
+    if (mechanismController.getRightBumperButtonPressed()) {
       Shooter = true;
     }
 
-    if (joystick1.getRightBumperButtonReleased()) {
+    if (mechanismController.getRightBumperButtonReleased()) {
       Shooter = false;
     }
 
     // In teleopPeriodic:
-    if (joystick1.getXButtonPressed())
+    if (mechanismController.getXButtonPressed())
       alignActive = true;
 
-    if (joystick1.getXButtonReleased())
+    if (mechanismController.getXButtonReleased())
       alignActive = false;
 
     if (alignActive)
       alignDistance(id, 0.7);
 
-    if (joystick1.getAButtonPressed()) {
-    reverseIntake = true;
+    if (mechanismController.getAButtonPressed()) {
+      reverseIntake = true;
     }
 
-    if (joystick1.getAButtonReleased()) {
-    reverseIntake = false;
+    if (mechanismController.getAButtonReleased()) {
+      reverseIntake = false;
     }
 
     // Then set motors AFTER:
@@ -380,10 +386,10 @@ public class Robot extends TimedRobot {
     }
 
     if (reverseIntake == true) {
-    inputLeader.set(-0.5);
+      inputLeader.set(-0.5);
     } else {
-    inputLeader.set(0);
-    indexer.set(0);
+      inputLeader.set(0);
+      indexer.set(0);
     }
 
     // if (leftTrigger >= 0.5) {
@@ -853,7 +859,7 @@ public class Robot extends TimedRobot {
     else if (autoStep > 11) {
       forwardSpeed = 0;
       turnSpeed = 0;
-      inputSpeed = 0; 
+      inputSpeed = 0;
       indexerSpeed = 0;
     }
 
@@ -915,7 +921,7 @@ public class Robot extends TimedRobot {
         climb.set(0);
         autoStep++;
         climbTimer.reset();
-        climbTimer.start(); 
+        climbTimer.start();
         aligntimer.reset();
         aligntimer.start();
       }
@@ -941,8 +947,7 @@ public class Robot extends TimedRobot {
         climbTimer.start();
       }
     }
-    
-    
+
     else if (autoStep > 4) {
       forwardSpeed = 0;
       turnSpeed = 0;
@@ -955,7 +960,7 @@ public class Robot extends TimedRobot {
     indexer.set(indexerSpeed);
   }
 
-    public void centerBlueAuto() {
+  public void centerBlueAuto() {
     double leftDistance = leftEncoder.getDistance();
     double rightDistance = rightEncoder.getDistance();
     distance = Math.abs((leftDistance + rightDistance) / 2);
@@ -1009,7 +1014,7 @@ public class Robot extends TimedRobot {
         climb.set(0);
         autoStep++;
         climbTimer.reset();
-        climbTimer.start(); 
+        climbTimer.start();
         aligntimer.reset();
         aligntimer.start();
       }
@@ -1035,7 +1040,7 @@ public class Robot extends TimedRobot {
         climbTimer.start();
       }
     }
-    
+
     else if (autoStep > 4) {
       forwardSpeed = 0;
       turnSpeed = 0;
@@ -1338,7 +1343,6 @@ public class Robot extends TimedRobot {
 
     // climbEncoder.setOffsetDegrees(360 - 340);
 
- 
   }
 
   @Override
@@ -1354,7 +1358,7 @@ public class Robot extends TimedRobot {
       switch (alliance.get()) {
         case Red:
           if (station.getAsInt() == 1) {
-            centerRedAuto(); 
+            centerRedAuto();
 
           } else if (station.getAsInt() == 2) {
             centerRedAuto();
