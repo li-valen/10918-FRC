@@ -303,7 +303,7 @@ public class Robot extends TimedRobot {
       maxFwd = 0.8;
     }
 
-    // Slow turn
+    // Slow turn for easier alignment
     if (driveController.getLeftBumperButton()) {
       rotation = rotation * 0.5;
     }
@@ -385,12 +385,12 @@ public class Robot extends TimedRobot {
       inputLeader.set(0);
     }
 
-    if (reverseIntake == true) {
-      inputLeader.set(-0.5);
-    } else {
-      inputLeader.set(0);
-      indexer.set(0);
-    }
+    // if (reverseIntake == true) {
+    //   inputLeader.set(-0.5);
+    // } else {
+    //   inputLeader.set(0);
+    //   indexer.set(0);
+    // }
 
     // if (leftTrigger >= 0.5) {
     // if (accumulatedDegrees < -150) {
